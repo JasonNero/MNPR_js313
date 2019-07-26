@@ -25,6 +25,7 @@
 #include "style_oilpaint.hpp"
 #include "style_charcoal.hpp"
 #include "style_sandbox.hpp"
+#include "style_spiderverse.hpp"
 #include <chrono>
 
 
@@ -32,7 +33,7 @@ const MString PLUGIN_NAME = "MNPR";                  // the same name as your pl
 const MString RENDERER_NAME = "MNPR";               // name in the renderer to appear in the Maya viewport
 const MString AUTHOR_NAME = "Santiago Montesdeoca";  // name of the author of the override
 const MString PURPOSE = "Research";                  // purpose of plugin ("Research" or "Client")
-const std::vector<MString> STYLES = { "Framework", "Watercolor", "Charcoal", "Sandbox" };  // supported styles
+const std::vector<MString> STYLES = { "Framework", "Watercolor", "Charcoal", "Sandbox", "Spiderverse" };  // supported styles
 
 MHWRender::MRasterFormat MNPROverride::colorDepths[3] = { MHWRender::kR8G8B8A8_SNORM, MHWRender::kR16G16B16A16_SNORM, MHWRender::kR32G32B32A32_FLOAT };
 
@@ -51,6 +52,9 @@ MStatus MNPROverride::addCustomTargets() {
 	else if (mEngSettings.style == "Sandbox") {
 		sb::addTargets(mRenderTargets);
 	}
+	else if (mEngSettings.style == "Spiderverse") {
+		sv::addTargets(mRenderTargets);
+	}
     return MS::kSuccess;
 }
 
@@ -68,6 +72,9 @@ MStatus MNPROverride::addCustomRenderOperations() {
     }
 	else if (mEngSettings.style == "Sandbox") {
 		sb::addOperations(mRenderOperations, mRenderTargets, mEngSettings, mFxParams);
+	}
+	else if (mEngSettings.style == "Spiderverse") {
+		sv::addOperations(mRenderOperations, mRenderTargets, mEngSettings, mFxParams);
 	}
     return MS::kSuccess;
 }

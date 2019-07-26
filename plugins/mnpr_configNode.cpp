@@ -17,6 +17,7 @@
 #include "node_watercolor.hpp"
 #include "node_oilpaint.hpp"
 #include "node_sandbox.hpp"
+#include "node_spiderverse.hpp"
 #include "node_charcoal.hpp"
 
 
@@ -83,6 +84,9 @@ MStatus ConfigNode::initializeCustomParameters() {
 	else if (engineSettings->style == "Sandbox") {
 		sb::initializeParameters(fxParameters, engineSettings);
 	}
+	else if (engineSettings->style == "Spiderverse") {
+		sv::initializeParameters(fxParameters, engineSettings);
+	}
     cout << "Initialization of " << engineSettings->style << " parameters was successful" << endl;
     return MS::kSuccess;
 }
@@ -102,6 +106,9 @@ MStatus ConfigNode::computeCustomParameters(MDataBlock& data) {
         }
 		else if (engineSettings->style == "Sandbox") {
 			sb::computeParameters(MNPR, data, fxParameters, engineSettings);
+		}
+		else if (engineSettings->style == "Spiderverse") {
+			sv::computeParameters(MNPR, data, fxParameters, engineSettings);
 		}
     }
     return MS::kSuccess;

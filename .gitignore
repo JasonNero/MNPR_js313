@@ -1,0 +1,38 @@
+# Project files
+projects/
+.idea/*
+*.idea/
+
+# Build files
+plugins/build/*
+docs/
+
+# Compiled Object files
+*.ilk
+*.pdb
+*.pyc
+*.fxo
+
+# Compiled Dynamic libraries
+*.so
+*.bundle
+*.mll
+
+# distributable files
+dist/*
+
+# private files
+p_*
+aio_*
+*MNPRX.mel
+
+# backup files
+*.bck
+
+# documentation
+doxyfile
+
+# substrates
+textures/*.jpg
+!textures/rough_default_2k.jpg
+textures/*.png

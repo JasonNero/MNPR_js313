@@ -29,6 +29,18 @@ float gZClipFar = 90.0;
 
 
 // FUNCTIONS
+float4 Screen(float4 cBase, float4 cBlend)
+{
+	return (1 - (1 - cBase) * (1 - cBlend));
+}
+
+float4 Overlay(float4 cBase, float4 cBlend)
+{
+	float isLessOrEq = step(cBase, .5);
+	float4 cNew = lerp(2 * cBlend * cBase, 1 - (1 - 2 * (cBase - .5)) * (1 - cBlend), isLessOrEq);
+	cNew.a = 1.0;
+	return cNew;
+}
 
 //    ____   ____ ____       ____       ____ __  ____   ___  __
 //   |  _ \ / ___| __ )     / /\ \     / ___|  \/  \ \ / / |/ /
@@ -72,9 +84,22 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	// current pixel location
 	int3 loc = int3(i.pos.xy, 0);
 
-	// offset for pixel shift
+
+
+	// TODO:
+	// fix halo enlargening when moving backplate further away
+	//	-> Wrong z value for comparision
+
+
+
+	// Sampling renderTex and Z
+	float4 renderTex = gColorTex.Load(loc);
+	float renderZ = gDepthTex.Load(loc).r;
+
+	// calculating offset for pixel shift
 	// ToDo: Elevate 10 as depth offset slider
-	int3 off = int3(10, 0, 0);
+	int3 off = int3(10 * (pow(renderZ,2)), 0, 0);
+	//int3 off = int3(10, 0, 0);
 	int3 posOffLoc = loc + off;
 	int3 negOffLoc = loc - off;
 
@@ -84,17 +109,25 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 
 	// Sampling 
 	// ToDo: Elevate 0.01 as depth bias slider
-	float4 renderTexZ = float4(gColorTex.Load(loc).rgb, gDepthTex.Load(loc).r);
-	float4 posOffTexZ = float4(gColorTex.Load(posOffLoc).rgb, gDepthTex.Load(posOffLoc).r + 0.01);
-	float4 negOffTexZ = float4(gColorTex.Load(negOffLoc).rgb, gDepthTex.Load(negOffLoc).r + 0.01);
+	// ToDo: Elevate method as enum "slider"?
+	// positive offset
+	float4 posOffTex = gColorTex.Load(posOffLoc);
+	//float posOffZ = gDepthTex.Load(posOffLoc).r + 0.01;
+	float posOffZ = gDepthTex.Load(negOffLoc).r + 0.01;
+
+	// negative offset
+	float4 negOffTex = gColorTex.Load(negOffLoc);
+	//float negOffZ = gDepthTex.Load(negOffLoc).r + 0.01;
+	float negOffZ = gDepthTex.Load(posOffLoc).r + 0.01;
 
 	// shifting color channels
 	// ToDo: Elevate controls which channels to offset
-	float4 shiftedTexZ = float4(renderTexZ.r, posOffTexZ.g, negOffTexZ.b, min(posOffTexZ.w, negOffTexZ.w));
+	float4 shiftedTex = float4(renderTex.r, posOffTex.g, negOffTex.b, 0.0);
+	float shiftedZ = min(posOffZ, negOffZ);
 
 	// z-Merge shitedTex and renderTex
 	// ToDo: process image from back to front?
-	float4 outTex = renderTexZ.w < shiftedTexZ.w ? renderTexZ : shiftedTexZ;
+	float4 outTex = renderZ < shiftedZ ? renderTex : shiftedTex;
 	outTex = float4(outTex.r, outTex.g, outTex.b, 0.0);
 
 	return outTex;

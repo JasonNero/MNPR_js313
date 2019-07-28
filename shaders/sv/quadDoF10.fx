@@ -84,17 +84,17 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 
 	// Sampling 
 	// ToDo: Elevate 0.01 as depth bias slider
-	float4 inputTexZ = float4(gColorTex.Load(loc).rgb, gDepthTex.Load(loc).r);
+	float4 renderTexZ = float4(gColorTex.Load(loc).rgb, gDepthTex.Load(loc).r);
 	float4 posOffTexZ = float4(gColorTex.Load(posOffLoc).rgb, gDepthTex.Load(posOffLoc).r + 0.01);
 	float4 negOffTexZ = float4(gColorTex.Load(negOffLoc).rgb, gDepthTex.Load(negOffLoc).r + 0.01);
 
 	// shifting color channels
 	// ToDo: Elevate controls which channels to offset
-	float4 shiftedTexZ = float4(renderTex.r, posOffTex.g, negOffTex.b, min(posOffTex.w, negOffTex.w));
+	float4 shiftedTexZ = float4(renderTexZ.r, posOffTexZ.g, negOffTexZ.b, min(posOffTexZ.w, negOffTexZ.w));
 
 	// z-Merge shitedTex and renderTex
 	// ToDo: process image from back to front?
-	float4 outTex = renderTex.w < shiftedTex.w ? renderTex : shiftedTex;
+	float4 outTex = renderTexZ.w < shiftedTexZ.w ? renderTexZ : shiftedTexZ;
 	outTex = float4(outTex.r, outTex.g, outTex.b, 0.0);
 
 	return outTex;

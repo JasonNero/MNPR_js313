@@ -2,6 +2,7 @@
 projects/
 .idea/*
 *.idea/
+.vs/*
 
 # Build files
 plugins/build/*

@@ -17,7 +17,8 @@
 #include "mnpr_nodes.h"
 
 // stylization attributes
-static MObject anotherAwesomeParameter;
+static MObject aZClipNear;
+static MObject aZClipFar;
 
 
 namespace sv {
@@ -29,13 +30,19 @@ namespace sv {
 		MFnTypedAttribute tAttr;
 		MFnNumericAttribute nAttr;
 
-		// color bleeding threshold
-		aAwesomeParameter = nAttr.create("awesomeParameter", "awesomeParameter", MFnNumericData::kFloat, mFxParams->awesomeParameter[0], &status);
+		// zClip Near
+		aZClipNear = nAttr.create("zClipNear", "zClipNear", MFnNumericData::kFloat, mFxParams->zClipNear[0], &status);
 		MAKE_INPUT(nAttr);
-		nAttr.setMin(-5.0);
-		nAttr.setSoftMax(5.0);
-		nAttr.setMax(10.0);
-		ConfigNode::enableAttribute(anotherAwesomeParameter);
+		nAttr.setMin(0.0);
+		nAttr.setSoftMax(100.0);
+		ConfigNode::enableAttribute(aZClipNear);
+
+		// zClip Far
+		aZClipFar = nAttr.create("zClipFar", "zClipFar", MFnNumericData::kFloat, mFxParams->zClipFar[0], &status);
+		MAKE_INPUT(nAttr);
+		nAttr.setMin(0.0);
+		nAttr.setSoftMax(100.0);
+		ConfigNode::enableAttribute(aZClipFar);
 
 	}
 
@@ -44,7 +51,8 @@ namespace sv {
 		MStatus status;
 
 		// READ PARAMETERS
-		mFxParams->awesomeParameter[0] = data.inputValue(anotherAwesomeParameter, &status).asFloat();
+		mFxParams->zClipNear[0] = data.inputValue(aZClipNear, &status).asFloat();
+		mFxParams->zClipFar[0] = data.inputValue(aZClipFar, &status).asFloat();
 	}
 
 };

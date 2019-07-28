@@ -38,9 +38,9 @@ namespace sv {
 		MString opName = "";
 
 		opName = "[quad] test pass";
-		auto opShader = new MOperationShader("quadTest", "testTechnique");
+		auto opShader = new MOperationShader("quadDoF", "offsetDoF");
 		opShader->addTargetParameter("gColorTex", mRenderTargets.target(mRenderTargets.indexOf("stylizationTarget")));
-		opShader->addParameter("gAwesomeParameter", mFxParams.awesomeParameter);
+		opShader->addParameter("gAwesomeParameter", mFxParams.zClipNear);
 		auto quadOp = new QuadRender(opName,
 			MHWRender::MClearOperation::kClearNone,
 			mRenderTargets,

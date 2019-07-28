@@ -136,6 +136,9 @@ struct FXParameters {
     std::vector<float> dryMediaThreshold = std::vector<float>{ 0.5f };
 	// sandbox parameters
 	std::vector<float> awesomeParameter = std::vector<float>{ 1.0f };
+	// spiderverse parameters
+	std::vector<float> zClipNear = std::vector<float>{ 10.0f };
+	std::vector<float> zClipFar = std::vector<float>{ 90.0f };
 
 
     /// print fx parameters (DEBUG)

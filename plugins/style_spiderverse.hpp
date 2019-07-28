@@ -29,7 +29,7 @@ namespace sv {
 		MHWRender::MRasterFormat rgba8 = MHWRender::kR8G8B8A8_SNORM;
 		MHWRender::MRasterFormat rgb8 = MHWRender::kR8G8B8X8;
 
-		targetList.append(MHWRender::MRenderTargetDescription("testTarget", tWidth, tHeight, 1, rgba8, arraySliceCount, isCubeMap));
+		targetList.append(MHWRender::MRenderTargetDescription("offsetTarget", tWidth, tHeight, 1, rgba8, arraySliceCount, isCubeMap));
 	}
 
 
@@ -37,10 +37,13 @@ namespace sv {
 		EngineSettings &mEngSettings, FXParameters &mFxParams) {
 		MString opName = "";
 
-		opName = "[quad] test pass";
-		auto opShader = new MOperationShader("quadDoF", "offsetDoF");
+		opName = "[quad] offset DoF";
+		auto opShader = new MOperationShader("sv", "quadDoF", "offsetDoF");
 		opShader->addTargetParameter("gColorTex", mRenderTargets.target(mRenderTargets.indexOf("stylizationTarget")));
-		opShader->addParameter("gAwesomeParameter", mFxParams.zClipNear);
+		opShader->addTargetParameter("gDepthTex", mRenderTargets.target(mRenderTargets.indexOf("linearDepth")));
+		opShader->addTargetParameter("gZBuffer", mRenderTargets.target(mRenderTargets.indexOf("depthTarget")));
+		opShader->addParameter("gClipNear", mFxParams.zClipNear);
+		opShader->addParameter("gClipFar", mFxParams.zClipFar);
 		auto quadOp = new QuadRender(opName,
 			MHWRender::MClearOperation::kClearNone,
 			mRenderTargets,

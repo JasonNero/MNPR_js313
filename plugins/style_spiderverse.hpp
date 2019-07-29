@@ -42,6 +42,7 @@ namespace sv {
 		opShader->addTargetParameter("gColorTex", mRenderTargets.target(mRenderTargets.indexOf("stylizationTarget")));
 		opShader->addTargetParameter("gDepthTex", mRenderTargets.target(mRenderTargets.indexOf("linearDepth")));
 		opShader->addTargetParameter("gZBuffer", mRenderTargets.target(mRenderTargets.indexOf("depthTarget")));
+		opShader->addTargetParameter("gControlTex", mRenderTargets.target(mRenderTargets.indexOf("abstractCtrlTarget")));  // testFx control in red channel
 		opShader->addParameter("gClipNear", mFxParams.zClipNear);
 		opShader->addParameter("gClipFar", mFxParams.zClipFar);
 		auto quadOp = new QuadRender(opName,

@@ -17,11 +17,14 @@
 
 // COMMON MAYA VARIABLES
 //float2 gScreenSize : ViewportPixelSize;  // screen size, in pixels
+//float gNCP : NearClipPlane;  // near clip plane distance
 
 // TEXTURES
 // Texture2D gSubstrateTex;
 // Texture2D gControlTex;
 Texture2D gDepthTex;
+Texture2D gZBuffer;
+Texture2D gControlTex;
 
 // VARIABLES
 float gZClipNear = 10.0;
@@ -48,7 +51,7 @@ float4 Overlay(float4 cBase, float4 cBlend)
 //   |  _ <| |_| | |_) |   \ \  / /   | |___| |  | | | | | . \ 
 //   |_| \_\\____|____/     \_\/_/     \____|_|  |_| |_| |_|\_\
 //                                                             
-float4 rgb2cmyk(float3 color) {
+float4 rgb2cmyk(float4 color) {
 	float k = 1 - max(max(color.r, color.g), color.b);		
 
 	float c = (1 - color.r - k) / (1 - k);	
@@ -84,22 +87,16 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	// current pixel location
 	int3 loc = int3(i.pos.xy, 0);
 
-
-
-	// TODO:
-	// fix halo enlargening when moving backplate further away
-	//	-> Wrong z value for comparision
-
-
-
 	// Sampling renderTex and Z
 	float4 renderTex = gColorTex.Load(loc);
-	float renderZ = gDepthTex.Load(loc).r;
+	float renderZ = gZBuffer.Load(loc).r;
 
 	// calculating offset for pixel shift
 	// ToDo: Elevate 10 as depth offset slider
-	int3 off = int3(10 * (pow(renderZ,2)), 0, 0);
-	//int3 off = int3(10, 0, 0);
+	float strength = 10;
+	int exponent = 1;
+	int3 off = trunc(float3(strength * renderZ, 0, 0));
+	//int3 off = int3(strength, 0, 0);
 	int3 posOffLoc = loc + off;
 	int3 negOffLoc = loc - off;
 
@@ -108,27 +105,37 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	negOffLoc = clamp(negOffLoc, int3(0, 0, 0), int3(gScreenSize.x - 1, gScreenSize.y - 1, 0));
 
 	// Sampling 
-	// ToDo: Elevate 0.01 as depth bias slider
+	// ToDo: Elevate depth bias slider
+	float bias = 0.001;
 	// ToDo: Elevate method as enum "slider"?
 	// positive offset
 	float4 posOffTex = gColorTex.Load(posOffLoc);
-	//float posOffZ = gDepthTex.Load(posOffLoc).r + 0.01;
-	float posOffZ = gDepthTex.Load(negOffLoc).r + 0.01;
+	float posOffZ = gZBuffer.Load(negOffLoc).r + bias;
+	//float posOffZ = gZBuffer.Load(posOffLoc).r + bias;
 
 	// negative offset
 	float4 negOffTex = gColorTex.Load(negOffLoc);
-	//float negOffZ = gDepthTex.Load(negOffLoc).r + 0.01;
-	float negOffZ = gDepthTex.Load(posOffLoc).r + 0.01;
+	float negOffZ = gZBuffer.Load(posOffLoc).r + bias;
+	//float negOffZ = gZBuffer.Load(negOffLoc).r + bias;
 
 	// shifting color channels
 	// ToDo: Elevate controls which channels to offset
-	float4 shiftedTex = float4(renderTex.r, posOffTex.g, negOffTex.b, 0.0);
+
+	// posOffTex = float4(cmyk2rgb(float4(rgb2cmyk(posOffTex).x, 0.0, 0.0, 0.0)), posOffTex.a);
+	// negOffTex = float4(cmyk2rgb(float4(0.0, rgb2cmyk(negOffTex).y, 0.0, 0.0)), negOffTex.a);
+	// float4 shiftedTex = posOffTex * float4(1.0, 0.0, 0.0, 1.0) + negOffTex * float4(0.0, 1.0, 0.0, 1.0);	// in CMYK!
+	// float4 shiftedTex = (posOffTex + negOffTex);
+	// shiftedTex = float4(cmyk2rgb(shiftedTex), 1.0);
+	
+	//float4 shiftedTex = float4(negOffTex.r, renderTex.g, posOffTex.b, 0.0);
+	float4 shiftedTex = Screen(negOffTex * float4(1.0, 1.0, 0.0, 1.0), posOffTex * float4(0.0, 1.0, 1.0, 1.0));
 	float shiftedZ = min(posOffZ, negOffZ);
 
 	// z-Merge shitedTex and renderTex
 	// ToDo: process image from back to front?
+	float4 empty = float4(0.0, 0.0, 0.0, 0.0);
 	float4 outTex = renderZ < shiftedZ ? renderTex : shiftedTex;
-	outTex = float4(outTex.r, outTex.g, outTex.b, 0.0);
+	// outTex = float4(outTex.r, outTex.g, outTex.b, outTex.a);
 
 	return outTex;
 }

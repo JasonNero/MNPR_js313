@@ -49,54 +49,66 @@ logger.setLevel(logging.DEBUG)  # defines the logging level (INFO for releases)
 #          - watercolor: -
 #          - oil paint : -
 #          - charcoal  : -
+#          - spiderverse: -
 #    GREEN - general   : PIGMENT APPLICATION
 #          - watercolor: pigment application (granulation - dry-brush)
 #          - oil paint : pigment application (impasto - dry-brush)
 #          - charcoal  : pigment application 
+#          - spiderverse: -
 #    BLUE  - general   : PIGMENT DENSITY
 #          - watercolor: pigment density
 #          - oil paint : pigment density
 #          - charcoal  : pigment darkness 
+#          - spiderverse: -
 #    ALPHA - general   : DETAIL | [RED in abstraction target]
 #          - watercolor: -
 #          - oil paint : color detail
 #          - charcoal  : smudging
+#          - spiderverse: smudging
 #
 # controlSetB (Substrate Effects):
 #    RED   - general   : SUBSTRATE DISTORTION
 #          - watercolor: substrate distortion
 #          - oil paint : substrate distortion
 #          - charcoal  :
+#          - spiderverse: -
 #    GREEN - general   :  U-INCLINATION (also used to specify direction, in general)
 #          - watercolor: -
 #          - oil paint : -
 #          - charcoal  : -
+#          - spiderverse: -
 #    BLUE  - general   : V-INCLINATION (also used to specify direction, in general)
 #          - watercolor: -
 #          - oil paint : -
 #          - charcoal  : -
+#          - spiderverse: -
 #    ALPHA - general   : SHAPE | [GREEN in abstraction target]
 #          - watercolor: -
 #          - oil paint : -
 #          - charcoal  : -
+#          - spiderverse: -
 #
 # controlSetC (Edge effects):
 #    RED   - general   : EDGE INTENSITY
 #          - watercolor: edge darkening
 #          - oil paint : -
 #          - charcoal  : -
+#          - spiderverse: -
 #    GREEN - general   : EDGE WIDTH
 #          - watercolor: edge width
 #          - oil paint : -
 #          - charcoal  : 
+#          - spiderverse: -
 #    BLUE  - general   : EDGE TRANSITION
 #          - watercolor: gaps and overlaps
 #          - oil paint : gaps and overlaps
 #          - charcoal  :
+#          - spiderverse: -
 #    ALPHA - general   : BLENDING | [BLUE in abstraction target]
 #          - watercolor: color bleeding
 #          - oil paint : paint stroke length
 #          - charcoal  : mixing
+#          - spiderverse: -
 #
 # ===========================================================================================
 
@@ -147,6 +159,10 @@ def getStyleFX():
     edgeFX_CH = MNPR_FX("edge manip", "Edge manipulation", "controlSetC", [[1, 0, 0, 0]], ["soften", "revert"], ["n. soften", "n. darken"])
     charcoalFX = [distortionFX, densityFX_CH, applicationFX_CH, mixingFX_CH, smudgingFX_CH, edgeFX_CH]
 
+    # spiderverse effects
+    testFX_SV = MNPR_FX("smudging", "Smudging", "controlSetA", [[0, 0, 0, 1]], ["smudge", "revert"], ["noise"])
+    spiderverseFX = [testFX_SV]
+
     # query mnpr style and return
     style = cmds.mnpr(style=True, q=True).encode('latin1')  # some users have had problems without encode('latin1')
     if style == "Watercolor":
@@ -155,6 +171,8 @@ def getStyleFX():
         return oilFX
     elif style == "Charcoal":
         return charcoalFX
+    elif style == "Spiderverse":
+        return spiderverseFX
     return []
 
 

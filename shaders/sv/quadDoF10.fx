@@ -29,7 +29,11 @@ Texture2D gControlTex;
 // VARIABLES
 float gZClipNear = 10.0;
 float gZClipFar = 90.0;
-
+float gZFocus = 0.0;
+float gOffsetStrength = 10.0;
+float gDepthBias = 1.0;
+float gColorSepMix = 1.0;
+float gDepthEffectMix = 1.0;
 
 // FUNCTIONS
 float4 Screen(float4 cBase, float4 cBlend)
@@ -87,16 +91,19 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	// current pixel location
 	int3 loc = int3(i.pos.xy, 0);
 
+	// ToDo:
+	//	- Implement Near and Far Clipping
+	//	- gZBuffer seems to be always 1.0
+	//	- choose different blend mode
+
 	// Sampling renderTex and Z
 	float4 renderTex = gColorTex.Load(loc);
 	float renderZ = gZBuffer.Load(loc).r;
+	// float renderZ = gDepthTex.Load(loc).r;
 
 	// calculating offset for pixel shift
-	// ToDo: Elevate 10 as depth offset slider
-	float strength = 10;
-	int exponent = 1;
-	int3 off = trunc(float3(strength * renderZ, 0, 0));
-	//int3 off = int3(strength, 0, 0);
+	int3 off = trunc(float3(gOffsetStrength * pow(renderZ - gZFocus, 2), 0, 0));
+	//int3 off = int3(gOffsetStrength, 0, 0);
 	int3 posOffLoc = loc + off;
 	int3 negOffLoc = loc - off;
 
@@ -105,37 +112,36 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	negOffLoc = clamp(negOffLoc, int3(0, 0, 0), int3(gScreenSize.x - 1, gScreenSize.y - 1, 0));
 
 	// Sampling 
-	// ToDo: Elevate depth bias slider
-	float bias = 0.001;
-	// ToDo: Elevate method as enum "slider"?
+	// ToDo: Elevate method as enum field?
 	// positive offset
 	float4 posOffTex = gColorTex.Load(posOffLoc);
-	float posOffZ = gZBuffer.Load(negOffLoc).r + bias;
-	//float posOffZ = gZBuffer.Load(posOffLoc).r + bias;
+	float posOffZ = gZBuffer.Load(negOffLoc).r + gDepthBias;
+	//float posOffZ = gDepthTex.Load(negOffLoc).r + gDepthBias;
 
 	// negative offset
 	float4 negOffTex = gColorTex.Load(negOffLoc);
-	float negOffZ = gZBuffer.Load(posOffLoc).r + bias;
-	//float negOffZ = gZBuffer.Load(negOffLoc).r + bias;
+	float negOffZ = gZBuffer.Load(posOffLoc).r + gDepthBias;
+	//float negOffZ = gDepthTex.Load(posOffLoc).r + gDepthBias;
 
 	// shifting color channels
 	// ToDo: Elevate controls which channels to offset
-
-	// posOffTex = float4(cmyk2rgb(float4(rgb2cmyk(posOffTex).x, 0.0, 0.0, 0.0)), posOffTex.a);
-	// negOffTex = float4(cmyk2rgb(float4(0.0, rgb2cmyk(negOffTex).y, 0.0, 0.0)), negOffTex.a);
-	// float4 shiftedTex = posOffTex * float4(1.0, 0.0, 0.0, 1.0) + negOffTex * float4(0.0, 1.0, 0.0, 1.0);	// in CMYK!
-	// float4 shiftedTex = (posOffTex + negOffTex);
-	// shiftedTex = float4(cmyk2rgb(shiftedTex), 1.0);
 	
-	//float4 shiftedTex = float4(negOffTex.r, renderTex.g, posOffTex.b, 0.0);
-	float4 shiftedTex = Screen(negOffTex * float4(1.0, 1.0, 0.0, 1.0), posOffTex * float4(0.0, 1.0, 1.0, 1.0));
+	//float4 shiftedTex = float4(negOffTex.r, renderTex.g, posOffTex.b, 0.0);	// This makes halos a specific color
+	float4 shiftedTexSep = Screen(negOffTex * float4(1.0, 1.0, 0.0, 1.0), posOffTex * float4(0.0, 1.0, 1.0, 1.0));	// This is more cmyk like
+	float4 shiftedTexAdd = 0.5 * (negOffTex + posOffTex);
+	float4 shiftedTex = lerp(shiftedTexAdd, shiftedTexSep, gColorSepMix);
+	//float4 shiftedTex = negOffTex * float4(1.0, 0.5, 0.0, 1.0) + posOffTex * float4(0.0, 0.5, 1.0, 1.0);	// This is more cmyk like
 	float shiftedZ = min(posOffZ, negOffZ);
 
 	// z-Merge shitedTex and renderTex
 	// ToDo: process image from back to front?
-	float4 empty = float4(0.0, 0.0, 0.0, 0.0);
 	float4 outTex = renderZ < shiftedZ ? renderTex : shiftedTex;
+
+	// ToDo: Elevate mix control
+	outTex = lerp(renderTex, outTex, gDepthEffectMix);
 	// outTex = float4(outTex.r, outTex.g, outTex.b, outTex.a);
+
+	//return gZBuffer.Load(loc).rrrr / 10.0;
 
 	return outTex;
 }

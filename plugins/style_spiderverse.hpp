@@ -45,6 +45,12 @@ namespace sv {
 		opShader->addTargetParameter("gControlTex", mRenderTargets.target(mRenderTargets.indexOf("abstractCtrlTarget")));  // testFx control in red channel
 		opShader->addParameter("gClipNear", mFxParams.zClipNear);
 		opShader->addParameter("gClipFar", mFxParams.zClipFar);
+		opShader->addParameter("gZFocus", mFxParams.svZFocus);
+		opShader->addParameter("gOffsetStrength", mFxParams.svOffsetStrength);
+		opShader->addParameter("gDepthBias", mFxParams.svDepthBias);
+		opShader->addParameter("gColorSepMix", mFxParams.svColorSepMix);
+		opShader->addParameter("gDepthEffectMix", mFxParams.svDepthEffectMix);
+
 		auto quadOp = new QuadRender(opName,
 			MHWRender::MClearOperation::kClearNone,
 			mRenderTargets,

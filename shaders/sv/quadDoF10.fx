@@ -95,15 +95,16 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	//	- Implement Near and Far Clipping
 	//	- gZBuffer seems to be always 1.0
 	//	- choose different blend mode
+	//	- thresholding input
+	//		-> external shader?
+	//	- where is the nuke prototype?
 
 	// Sampling renderTex and Z
 	float4 renderTex = gColorTex.Load(loc);
 	float renderZ = gZBuffer.Load(loc).r;
-	// float renderZ = gDepthTex.Load(loc).r;
 
 	// calculating offset for pixel shift
 	int3 off = trunc(float3(gOffsetStrength * pow(renderZ - gZFocus, 2), 0, 0));
-	//int3 off = int3(gOffsetStrength, 0, 0);
 	int3 posOffLoc = loc + off;
 	int3 negOffLoc = loc - off;
 
@@ -111,37 +112,30 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	posOffLoc = clamp(posOffLoc, int3(0, 0, 0), int3(gScreenSize.x - 1, gScreenSize.y - 1, 0));
 	negOffLoc = clamp(negOffLoc, int3(0, 0, 0), int3(gScreenSize.x - 1, gScreenSize.y - 1, 0));
 
-	// Sampling 
-	// ToDo: Elevate method as enum field?
 	// positive offset
 	float4 posOffTex = gColorTex.Load(posOffLoc);
 	float posOffZ = gZBuffer.Load(negOffLoc).r + gDepthBias;
-	//float posOffZ = gDepthTex.Load(negOffLoc).r + gDepthBias;
 
 	// negative offset
 	float4 negOffTex = gColorTex.Load(negOffLoc);
 	float negOffZ = gZBuffer.Load(posOffLoc).r + gDepthBias;
-	//float negOffZ = gDepthTex.Load(posOffLoc).r + gDepthBias;
 
 	// shifting color channels
 	// ToDo: Elevate controls which channels to offset
-	
+	// Both color methods are equally valid.. 
+
 	//float4 shiftedTex = float4(negOffTex.r, renderTex.g, posOffTex.b, 0.0);	// This makes halos a specific color
 	float4 shiftedTexSep = Screen(negOffTex * float4(1.0, 1.0, 0.0, 1.0), posOffTex * float4(0.0, 1.0, 1.0, 1.0));	// This is more cmyk like
 	float4 shiftedTexAdd = 0.5 * (negOffTex + posOffTex);
 	float4 shiftedTex = lerp(shiftedTexAdd, shiftedTexSep, gColorSepMix);
-	//float4 shiftedTex = negOffTex * float4(1.0, 0.5, 0.0, 1.0) + posOffTex * float4(0.0, 0.5, 1.0, 1.0);	// This is more cmyk like
+	// rethink why to merge z like this:
 	float shiftedZ = min(posOffZ, negOffZ);
 
 	// z-Merge shitedTex and renderTex
 	// ToDo: process image from back to front?
 	float4 outTex = renderZ < shiftedZ ? renderTex : shiftedTex;
 
-	// ToDo: Elevate mix control
 	outTex = lerp(renderTex, outTex, gDepthEffectMix);
-	// outTex = float4(outTex.r, outTex.g, outTex.b, outTex.a);
-
-	//return gZBuffer.Load(loc).rrrr / 10.0;
 
 	return outTex;
 }

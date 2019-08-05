@@ -98,6 +98,7 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	//	- thresholding input
 	//		-> external shader?
 	//	- where is the nuke prototype?
+	//	- elevate seperation colors
 
 	// Sampling renderTex and Z
 	float4 renderTex = gColorTex.Load(loc);
@@ -122,12 +123,15 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 
 	// shifting color channels
 	// ToDo: Elevate controls which channels to offset
-	// Both color methods are equally valid.. 
+	float4 sepColorA = float4(1.0, 1.0, 0.0, 1.0);
+	float4 sepColorB = float4(0.0, 1.0, 1.0, 1.0);
 
-	//float4 shiftedTex = float4(negOffTex.r, renderTex.g, posOffTex.b, 0.0);	// This makes halos a specific color
-	float4 shiftedTexSep = Screen(negOffTex * float4(1.0, 1.0, 0.0, 1.0), posOffTex * float4(0.0, 1.0, 1.0, 1.0));	// This is more cmyk like
+	// Both color methods are equally valid.. 
+	//float4 shiftedTex = float4(negOffTex.r, renderTex.g, posOffTex.b, 0.0);		// This makes halos a specific color
+	float4 shiftedTexSep = Screen(negOffTex * sepColorA, posOffTex * sepColorB);	// This is more cmyk like
 	float4 shiftedTexAdd = 0.5 * (negOffTex + posOffTex);
 	float4 shiftedTex = lerp(shiftedTexAdd, shiftedTexSep, gColorSepMix);
+
 	// rethink why to merge z like this:
 	float shiftedZ = min(posOffZ, negOffZ);
 

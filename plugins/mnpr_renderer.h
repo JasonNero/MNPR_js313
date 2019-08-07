@@ -142,6 +142,8 @@ struct FXParameters {
 	std::vector<float> svZFocus = std::vector<float>{ 0.0f };
 	std::vector<float> svOffsetStrength = std::vector<float>{ 10.0f };
 	std::vector<float> svDepthBias = std::vector<float>{ 1.0f };
+	std::vector<float> svColorSepA = std::vector<float>{ 1.0f, 1.0f, 0.0f, 0.0f };
+	std::vector<float> svColorSepB = std::vector<float>{ 0.0f, 1.0f, 1.0f, 0.0f };
 	std::vector<float> svColorSepMix = std::vector<float>{ 1.0f };
 	std::vector<float> svDepthEffectMix = std::vector<float>{ 1.0f };
 	

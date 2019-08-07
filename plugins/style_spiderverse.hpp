@@ -48,6 +48,8 @@ namespace sv {
 		opShader->addParameter("gZFocus", mFxParams.svZFocus);
 		opShader->addParameter("gOffsetStrength", mFxParams.svOffsetStrength);
 		opShader->addParameter("gDepthBias", mFxParams.svDepthBias);
+		opShader->addParameter("gColorSepA", mFxParams.svColorSepA);
+		opShader->addParameter("gColorSepB", mFxParams.svColorSepB);
 		opShader->addParameter("gColorSepMix", mFxParams.svColorSepMix);
 		opShader->addParameter("gDepthEffectMix", mFxParams.svDepthEffectMix);
 

@@ -14,6 +14,7 @@
 // This shader tries to imitate the depth of field effect of 'Spider-Man into the Spider-Verse'
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "..\\include\\quadCommon.fxh"
+#include "..\\include\\quadColorTransform.fxh"
 
 // COMMON MAYA VARIABLES
 //float2 gScreenSize : ViewportPixelSize;  // screen size, in pixels
@@ -34,6 +35,9 @@ float gOffsetStrength = 10.0;
 float gDepthBias = 1.0;
 float gColorSepMix = 1.0;
 float gDepthEffectMix = 1.0;
+
+float4 gColorSepA = float4(1.0, 1.0, 0.0, 1.0);
+float4 gColorSepB = float4(0.0, 1.0, 1.0, 1.0);
 
 // FUNCTIONS
 float4 Screen(float4 cBase, float4 cBlend)
@@ -93,12 +97,17 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 
 	// ToDo:
 	//	- Implement Near and Far Clipping
-	//	- gZBuffer seems to be always 1.0
-	//	- choose different blend mode
+	//	- weird behavior of zfocus
+	//		-> gZBuffer seems to be always 1.0
+	//	- weird blending of offset colors
+	//		-> improve z merging of offset colors
 	//	- thresholding input
 	//		-> external shader?
 	//	- where is the nuke prototype?
-	//	- elevate seperation colors
+	//	- offset at an angle
+	//	- more than two offsets?
+	//	- change RGB * SepColor to HSV Value * SepColor
+	//		-> some colors wont get split up at all
 
 	// Sampling renderTex and Z
 	float4 renderTex = gColorTex.Load(loc);
@@ -122,13 +131,13 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	float negOffZ = gZBuffer.Load(posOffLoc).r + gDepthBias;
 
 	// shifting color channels
-	// ToDo: Elevate controls which channels to offset
-	float4 sepColorA = float4(1.0, 1.0, 0.0, 1.0);
-	float4 sepColorB = float4(0.0, 1.0, 1.0, 1.0);
 
 	// Both color methods are equally valid.. 
-	//float4 shiftedTex = float4(negOffTex.r, renderTex.g, posOffTex.b, 0.0);		// This makes halos a specific color
-	float4 shiftedTexSep = Screen(negOffTex * sepColorA, posOffTex * sepColorB);	// This is more cmyk like
+	//float4 shiftedTex = float4(negOffTex.r, renderTex.g, posOffTex.b, 0.0);				// This makes halos a specific color
+	//float4 shiftedTexSep = Screen(negOffTex * gColorSepA, posOffTex * gColorSepB);		// This is more cmyk like
+	//float4 shiftedTexSep = negOffTex * gColorSepA + posOffTex * gColorSepB;				// This produces the same result as Screen... why?
+	float4 shiftedTexSep = rgb2hsv(negOffTex.rgb).z * gColorSepA + rgb2hsv(posOffTex.rgb).z * gColorSepB;	// This should "color in" the offsets
+
 	float4 shiftedTexAdd = 0.5 * (negOffTex + posOffTex);
 	float4 shiftedTex = lerp(shiftedTexAdd, shiftedTexSep, gColorSepMix);
 

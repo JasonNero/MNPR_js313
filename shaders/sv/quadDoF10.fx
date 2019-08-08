@@ -108,6 +108,12 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	//	- more than two offsets?
 	//	- change RGB * SepColor to HSV Value * SepColor
 	//		-> some colors wont get split up at all
+	//	- figure out what to do with the alpha channel
+    //  - effect disapperaring at depth 100
+    //      -> when changing camera near clip 0.1 to 1.0 it works again
+    //      -> understand relationship between maya clip planes and resulting z depth
+    //  - use linear depth instead
+    //      -> has the depth of two following frames in it!
 
 	// Sampling renderTex and Z
 	float4 renderTex = gColorTex.Load(loc);
@@ -136,7 +142,8 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	//float4 shiftedTex = float4(negOffTex.r, renderTex.g, posOffTex.b, 0.0);				// This makes halos a specific color
 	//float4 shiftedTexSep = Screen(negOffTex * gColorSepA, posOffTex * gColorSepB);		// This is more cmyk like
 	//float4 shiftedTexSep = negOffTex * gColorSepA + posOffTex * gColorSepB;				// This produces the same result as Screen... why?
-	float4 shiftedTexSep = rgb2hsv(negOffTex.rgb).z * gColorSepA + rgb2hsv(posOffTex.rgb).z * gColorSepB;	// This should "color in" the offsets
+	//float4 shiftedTexSep = rgb2hsv(negOffTex.rgb).z * gColorSepA + rgb2hsv(posOffTex.rgb).z * gColorSepB;	// This should "color in" the offsets
+	float4 shiftedTexSep = luminance(negOffTex.rgb) * gColorSepA + luminance(posOffTex.rgb) * gColorSepB;	// This should "color in" the offsets	
 
 	float4 shiftedTexAdd = 0.5 * (negOffTex + posOffTex);
 	float4 shiftedTex = lerp(shiftedTexAdd, shiftedTexSep, gColorSepMix);

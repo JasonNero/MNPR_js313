@@ -112,12 +112,15 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
     //  - effect disapperaring at depth 100
     //      -> when changing camera near clip 0.1 to 1.0 it works again
     //      -> understand relationship between maya clip planes and resulting z depth
-    //  - use linear depth instead
+    //  - use linear depth instead?
     //      -> has the depth of two following frames in it!
+
+    Texture2D myDepth = gZBuffer;
+    //Texture2D myDepth = gDepthTex;
 
 	// Sampling renderTex and Z
 	float4 renderTex = gColorTex.Load(loc);
-	float renderZ = gZBuffer.Load(loc).r;
+    float renderZ = myDepth.Load(loc).r;
 
 	// calculating offset for pixel shift
 	int3 off = trunc(float3(gOffsetStrength * pow(renderZ - gZFocus, 2), 0, 0));
@@ -130,11 +133,11 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 
 	// positive offset
 	float4 posOffTex = gColorTex.Load(posOffLoc);
-	float posOffZ = gZBuffer.Load(negOffLoc).r + gDepthBias;
+    float posOffZ = myDepth.Load(negOffLoc).r + gDepthBias;
 
 	// negative offset
 	float4 negOffTex = gColorTex.Load(negOffLoc);
-	float negOffZ = gZBuffer.Load(posOffLoc).r + gDepthBias;
+    float negOffZ = myDepth.Load(posOffLoc).r + gDepthBias;
 
 	// shifting color channels
 

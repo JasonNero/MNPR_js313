@@ -98,7 +98,7 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	// ToDo:
 	//	- Implement Near and Far Clipping
 	//	- weird behavior of zfocus
-	//		-> gZBuffer seems to be always 1.0
+	//		-> gZBuffer seems to be always 1.0 - normalization??
 	//	- weird blending of offset colors
 	//		-> improve z merging of offset colors
 	//	- thresholding input
@@ -113,21 +113,24 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
     //  - use linear depth instead?
     //      -> has the depth of two following frames in it!
     //  - Use Principles of a Deformation Shader
+	//	- Shader currently only comparing Z depth between fore and background pixel
+	//		-> should be consistently around object
+	//		-> Spread texture instead of taking it in
 
     // debug switch between depths
-    Texture2D myDepth = gZBuffer;
-    //Texture2D myDepth = gDepthTex;
+    //Texture2D myDepth = gZBuffer;
+    Texture2D myDepth = gDepthTex;
 
     float4 empty = float4(0.0, 0.0, 0.0, 0.0);
 
 	// Sampling renderTex and Z
 	float4 renderTex = gColorTex.Load(loc);
     float renderZ = myDepth.Load(loc);
+	renderZ = renderZ < 1.0 ? renderZ : 0.0; // Remove infinity depth
 
 	// calculating offset for pixel shift
-    //int3 off = int3(trunc(gOffsetStrength * pow(renderZ - gZFocus, 2)), 0, 0);
-    float testZ = renderZ - gZFocus;
-    float strength = gOffsetStrength * (testZ);
+    //int3 off = int3(trunc(gOffsetStrength * pow(renderZ - gZFocus, 2)), 0, 0);	// this may be more physically accurate
+    float strength = gOffsetStrength * (renderZ - gZFocus);
     int3 off = int3(strength, 0, 0);
 	int3 posOffLoc = loc + off;
 	int3 negOffLoc = loc - off;
@@ -138,21 +141,23 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 
 	// positive offset
     float posOffZ = myDepth.Load(posOffLoc).r + gDepthBias;
-    float4 posOffTex = renderZ < posOffZ ? empty : gColorTex.Load(posOffLoc);
+    //float4 posOffTex = renderZ < posOffZ ? empty : gColorTex.Load(posOffLoc);
+	float4 posOffTex = gColorTex.Load(posOffLoc);
 
 	// positive offset
     float negOffZ = myDepth.Load(negOffLoc).r + gDepthBias;
-    float4 negOffTex = renderZ < negOffZ ? empty : gColorTex.Load(negOffLoc);
+    //float4 negOffTex = renderZ < negOffZ ? empty : gColorTex.Load(negOffLoc);
+	float4 negOffTex = gColorTex.Load(loc);
 
 	// shifting color channels
     float4 shiftedTexAdd = renderTex + 0.5 * (negOffTex + posOffTex);
 
 	// z-Merge offset textures
-    float4 outTex = float4(0.0, 0.0, 0.0, 1.0);
+    float4 outTex = float4(0.0, 0.0, 0.0, 0.0);
     
     outTex = renderZ < posOffZ ? renderTex : float4(luminance(posOffTex.rgb) * gColorSepB.rgb, 1.0);
     outTex += renderZ < negOffZ ? renderTex : float4(luminance(negOffTex.rgb) * gColorSepA.rgb, 1.0);
-    outTex *= 0.5;
+    outTex *= .5;
 
     // interpolate color and effect strength
     outTex = lerp(shiftedTexAdd, outTex, gColorSepMix);

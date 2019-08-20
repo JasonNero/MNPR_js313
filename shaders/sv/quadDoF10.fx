@@ -106,24 +106,29 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	//	- where is the nuke prototype?
 	//	- offset at an angle
 	//	- more than two offsets?
-	//	- change RGB * SepColor to HSV Value * SepColor
-	//		-> some colors wont get split up at all
 	//	- figure out what to do with the alpha channel
     //  - effect disapperaring at depth 100
     //      -> when changing camera near clip 0.1 to 1.0 it works again
     //      -> understand relationship between maya clip planes and resulting z depth
     //  - use linear depth instead?
     //      -> has the depth of two following frames in it!
+    //  - Use Principles of a Deformation Shader
 
+    // debug switch between depths
     Texture2D myDepth = gZBuffer;
     //Texture2D myDepth = gDepthTex;
 
+    float4 empty = float4(0.0, 0.0, 0.0, 0.0);
+
 	// Sampling renderTex and Z
 	float4 renderTex = gColorTex.Load(loc);
-    float renderZ = myDepth.Load(loc).r;
+    float renderZ = myDepth.Load(loc);
 
 	// calculating offset for pixel shift
-	int3 off = trunc(float3(gOffsetStrength * pow(renderZ - gZFocus, 2), 0, 0));
+    //int3 off = int3(trunc(gOffsetStrength * pow(renderZ - gZFocus, 2)), 0, 0);
+    float testZ = renderZ - gZFocus;
+    float strength = gOffsetStrength * (testZ);
+    int3 off = int3(strength, 0, 0);
 	int3 posOffLoc = loc + off;
 	int3 negOffLoc = loc - off;
 
@@ -132,35 +137,28 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	negOffLoc = clamp(negOffLoc, int3(0, 0, 0), int3(gScreenSize.x - 1, gScreenSize.y - 1, 0));
 
 	// positive offset
-	float4 posOffTex = gColorTex.Load(posOffLoc);
-    float posOffZ = myDepth.Load(negOffLoc).r + gDepthBias;
+    float posOffZ = myDepth.Load(posOffLoc).r + gDepthBias;
+    float4 posOffTex = renderZ < posOffZ ? empty : gColorTex.Load(posOffLoc);
 
-	// negative offset
-	float4 negOffTex = gColorTex.Load(negOffLoc);
-    float negOffZ = myDepth.Load(posOffLoc).r + gDepthBias;
+	// positive offset
+    float negOffZ = myDepth.Load(negOffLoc).r + gDepthBias;
+    float4 negOffTex = renderZ < negOffZ ? empty : gColorTex.Load(negOffLoc);
 
 	// shifting color channels
+    float4 shiftedTexAdd = renderTex + 0.5 * (negOffTex + posOffTex);
 
-	// Both color methods are equally valid.. 
-	//float4 shiftedTex = float4(negOffTex.r, renderTex.g, posOffTex.b, 0.0);				// This makes halos a specific color
-	//float4 shiftedTexSep = Screen(negOffTex * gColorSepA, posOffTex * gColorSepB);		// This is more cmyk like
-	//float4 shiftedTexSep = negOffTex * gColorSepA + posOffTex * gColorSepB;				// This produces the same result as Screen... why?
-	//float4 shiftedTexSep = rgb2hsv(negOffTex.rgb).z * gColorSepA + rgb2hsv(posOffTex.rgb).z * gColorSepB;	// This should "color in" the offsets
-	float4 shiftedTexSep = luminance(negOffTex.rgb) * gColorSepA + luminance(posOffTex.rgb) * gColorSepB;	// This should "color in" the offsets	
+	// z-Merge offset textures
+    float4 outTex = float4(0.0, 0.0, 0.0, 1.0);
+    
+    outTex = renderZ < posOffZ ? renderTex : float4(luminance(posOffTex.rgb) * gColorSepB.rgb, 1.0);
+    outTex += renderZ < negOffZ ? renderTex : float4(luminance(negOffTex.rgb) * gColorSepA.rgb, 1.0);
+    outTex *= 0.5;
 
-	float4 shiftedTexAdd = 0.5 * (negOffTex + posOffTex);
-	float4 shiftedTex = lerp(shiftedTexAdd, shiftedTexSep, gColorSepMix);
-
-	// rethink why to merge z like this:
-	float shiftedZ = min(posOffZ, negOffZ);
-
-	// z-Merge shitedTex and renderTex
-	// ToDo: process image from back to front?
-	float4 outTex = renderZ < shiftedZ ? renderTex : shiftedTex;
-
+    // interpolate color and effect strength
+    outTex = lerp(shiftedTexAdd, outTex, gColorSepMix);
 	outTex = lerp(renderTex, outTex, gDepthEffectMix);
 
-	return outTex;
+    return outTex;
 }
 
 

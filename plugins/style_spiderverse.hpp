@@ -58,6 +58,6 @@ namespace sv {
 			mRenderTargets,
 			*opShader);
 		mRenderOperations.append(quadOp);
-		mRenderTargets.setOperationOutputs(opName, { "stylizationTarget" });
+		mRenderTargets.setOperationOutputs(opName, { "offsetTarget" });
 	}
 };

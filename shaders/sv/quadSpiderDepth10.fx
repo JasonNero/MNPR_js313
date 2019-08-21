@@ -53,62 +53,86 @@ float4 spiderCocFrag(vertexOutputSampler i) : SV_Target{
 	Texture2D myDepth = gDepthTex;
 
 	// Sampling Z
-	float renderZ = myDepth.Load(loc);
+	float renderZ = myDepth.Load(loc).r;
 	//renderZ = renderZ < 1.0 ? renderZ : 0.0; // Remove infinity depth
 
-	// calculating offset vector
-	float2 strength = (gOffsetStrength * (renderZ - gZFocus)) * axis;
+	// calculating offset depending on depth, focus and userinput gOffsetStrength. Also truncate those to fit as integer
+    float strength = abs(gOffsetStrength * renderZ - gZFocus);
 
-	return strength.xyxy;
+	// calculating resulting positions
+	float3 result = int3(loc.x + strength, loc.x - strength, strength);
+
+	// clamping the location values to screensize
+    result = float3(clamp(result.xy, 0, gScreenSize.x - 1), result.z);
+
+    float3 resultColorPreview = float3(result.rg, result.b);
+
+    return float4(resultColorPreview.rgb, 1.0);
 }
+
+
+/*
+check every pixel within gOffsetStrength range if the vector (x only for now) 
+in the offsetTex results in	the current pixel and if so take color from there.
+
+If multiple results are found:
+choose the one with the shortest distance/lowest strength
+
+WARNING:
+    -   This still only takes 1 pixel into consideration for the offset,
+        the second one is missing
+*/
 
 float4 spiderDepthFrag(vertexOutputSampler i) : SV_Target {
 	int3 loc = int3(i.pos.xy, 0);
 
 	Texture2D myDepth = gDepthTex;
 
-    float4 renderTex = gColorTex.Load(loc);
-    float4 offsetTex = gOffsetTex.Load(loc);
-	float renderZ = myDepth.Load(loc);
-
-	/*
-	check every pixel within gOffsetStrength range if the vector in the offsetTex results in
-	the current pixel and if so take color from there.
-	If multiple results are found choose the nearest one in zDepth.
-	*/
-
 	// using only x/u axis for now
-    int3 result = int3(0, 0, 0);
-    float resultZ = 1;
+	bool resultDiscard = false;
+    int3 resultLoc = int3(0, 0, 0);
+    int resultLen = gOffsetStrength * 2;
 
-    for (int u = -gOffsetStrength; u <= gOffsetStrength; u++)
+    for (int u = -int(gOffsetStrength); u <= int(gOffsetStrength); u++)
     {
-        int3 currentLoc = loc + int3(u, 0, 0);
-        int offsetLoc = trunc(gOffsetTex.Load(currentLoc));
-		int3 resultingLoc = currentLoc + offsetLoc;
-        if (resultingLoc == loc)
+		// get the work coordinate
+        int3 workLoc = loc + int3(u, 0, 0);
+
+		// reading the resulting locations
+		int3 resultingLocPos = int3(gOffsetTex.Load(workLoc).x, workLoc.y, 0);
+		int3 resultingLocNeg = int3(gOffsetTex.Load(workLoc).y, workLoc.y, 0);
+
+        // if the positions match
+        if (resultingLocPos.x - loc.x == 0 || resultingLocNeg.x - loc.x == 0)
+        //if (resultingLocPos.x - loc.x == 0)
         {
-			/////////////////////
-			// TODO GO ON HERE //
-			/////////////////////
+            // the strength or length of the offset vector at workLoc position
+            // better naming may be appropriate
+            int resultingLocLen = gOffsetTex.Load(workLoc).z;
 
-            result = gDepthTex.Load(resultingLoc) < resultZ ? 
-
+            // if the strength or vector length is smaller than what is currently 
+            // in the result variable overwrite it and process next pixel
+            if (resultingLocLen < resultLen)
+            {
+                resultLoc = workLoc;
+                resultLen = resultingLocLen;
+            }
+            
         }
     }
 
-	// clamping 
+    //float renderZ = myDepth.Load(loc);
 
-	// positive offset
-
-	// positive offset
+    // fetch colors
+    float4 renderTex = gColorTex.Load(loc);
+    float4 offsetTex = gColorTex.Load(resultLoc);
 
 	// merge offset textures
 
     // interpolate effect strength
     // outTex = lerp(renderTex, outTex, gDepthEffectMix);
 
-    return renderZ.xxxx;
+    return offsetTex;
 }
 
 

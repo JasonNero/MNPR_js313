@@ -29,9 +29,10 @@ namespace sv {
 		MHWRender::MRasterFormat rgba8 = MHWRender::kR8G8B8A8_SNORM;
 		MHWRender::MRasterFormat rgb8 = MHWRender::kR8G8B8X8;
 		MHWRender::MRasterFormat rg16f = MHWRender::kR16G16_FLOAT;
+		MHWRender::MRasterFormat rgba16f = MHWRender::kR16G16B16A16_FLOAT;
 
 		//targetList.append(MHWRender::MRenderTargetDescription("stylizationTarget", tWidth, tHeight, 1, rgba8, arraySliceCount, isCubeMap));
-		targetList.append(MHWRender::MRenderTargetDescription("offsetTarget", tWidth, tHeight, 1, rg16f, arraySliceCount, isCubeMap));
+		targetList.append(MHWRender::MRenderTargetDescription("offsetTarget", tWidth, tHeight, 1, rgba16f, arraySliceCount, isCubeMap));
 	}
 
 

@@ -69,6 +69,7 @@ namespace sv {
 		opShader->addParameter("gColorSepA", mFxParams.svColorSepA);
 		opShader->addParameter("gColorSepB", mFxParams.svColorSepB);
 		opShader->addParameter("gColorSepMix", mFxParams.svColorSepMix);
+		opShader->addParameter("gDepthBias", mFxParams.svDepthBias);
 		opShader->addParameter("gDepthEffectMix", mFxParams.svDepthEffectMix);
 		quadOp = new QuadRender(opName,
 			MHWRender::MClearOperation::kClearNone,

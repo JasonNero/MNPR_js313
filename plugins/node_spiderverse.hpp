@@ -76,7 +76,7 @@ namespace sv {
 		// svDepthBias
 		aSvDepthBias = nAttr.create("svDepthBias", "svDepthBias", MFnNumericData::kFloat, mFxParams->svDepthBias[0], &status);
 		MAKE_INPUT(nAttr);
-		nAttr.setMin(0.0);
+		nAttr.setMin(-1.0);
 		nAttr.setSoftMax(1.0);
 		ConfigNode::enableAttribute(aSvDepthBias);
 		

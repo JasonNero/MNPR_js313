@@ -121,18 +121,24 @@ float4 spiderDepthFrag(vertexOutputSampler i) : SV_Target {
         }
     }
 
-    //float renderZ = myDepth.Load(loc);
-
+    
+   
     // fetch colors
     float4 renderTex = gColorTex.Load(loc);
     float4 offsetTex = gColorTex.Load(resultLoc);
 
-	// merge offset textures
+    // fetch Z
+    float renderZ = myDepth.Load(loc);
+    float offsetZ = myDepth.Load(resultLoc) - gDepthBias;
+
+	// merge colors
+    float4 empty = float4(0.0, 0.0, 0.0, 0.0);
+    float4 resultTex = abs(renderZ) < abs(offsetZ) ? renderTex : (renderTex + offsetTex) * 0.5;
 
     // interpolate effect strength
     // outTex = lerp(renderTex, outTex, gDepthEffectMix);
 
-    return offsetTex;
+    return resultTex;
 }
 
 

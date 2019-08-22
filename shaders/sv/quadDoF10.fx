@@ -16,13 +16,7 @@
 #include "..\\include\\quadCommon.fxh"
 #include "..\\include\\quadColorTransform.fxh"
 
-// COMMON MAYA VARIABLES
-//float2 gScreenSize : ViewportPixelSize;  // screen size, in pixels
-//float gNCP : NearClipPlane;  // near clip plane distance
-
 // TEXTURES
-// Texture2D gSubstrateTex;
-// Texture2D gControlTex;
 Texture2D gDepthTex;
 Texture2D gZBuffer;
 Texture2D gControlTex;
@@ -38,49 +32,6 @@ float gDepthEffectMix = 1.0;
 
 float4 gColorSepA = float4(1.0, 1.0, 0.0, 1.0);
 float4 gColorSepB = float4(0.0, 1.0, 1.0, 1.0);
-
-// FUNCTIONS
-float4 Screen(float4 cBase, float4 cBlend)
-{
-	return (1 - (1 - cBase) * (1 - cBlend));
-}
-
-float4 Overlay(float4 cBase, float4 cBlend)
-{
-	float isLessOrEq = step(cBase, .5);
-	float4 cNew = lerp(2 * cBlend * cBase, 1 - (1 - 2 * (cBase - .5)) * (1 - cBlend), isLessOrEq);
-	cNew.a = 1.0;
-	return cNew;
-}
-
-//    ____   ____ ____       ____       ____ __  ____   ___  __
-//   |  _ \ / ___| __ )     / /\ \     / ___|  \/  \ \ / / |/ /
-//   | |_) | |  _|  _ \    / /  \ \   | |   | |\/| |\ V /| ' / 
-//   |  _ <| |_| | |_) |   \ \  / /   | |___| |  | | | | | . \ 
-//   |_| \_\\____|____/     \_\/_/     \____|_|  |_| |_| |_|\_\
-//                                                             
-float4 rgb2cmyk(float4 color) {
-	float k = 1 - max(max(color.r, color.g), color.b);		
-
-	float c = (1 - color.r - k) / (1 - k);	
-	float m = (1 - color.g - k) / (1 - k);	
-	float y = (1 - color.b - k) / (1 - k);	
-	
-	// alternative formula for a rough transformation
-	// float3 cmy = 1 - color
-	// cmyk.w = min(cmyk.x, min(cmyk.y, cmyk.z)); // Create K
-
-	return float4(c, m, y, k);
-}
-
-float3 cmyk2rgb(float4 cmyk) {
-	float r = (1 - cmyk.x) * (1 - cmyk.w);
-	float g = (1 - cmyk.y) * (1 - cmyk.w);
-	float b = (1 - cmyk.z) * (1 - cmyk.w);
-
-	return float3(r, g, b);
-}
-
 
 //        _               _
 //    ___| |__   __ _  __| | ___ _ __ ___
@@ -118,7 +69,6 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	//		-> Spread texture instead of taking it in
 
     // debug switch between depths
-    //Texture2D myDepth = gZBuffer;
     Texture2D myDepth = gDepthTex;
 
     float4 empty = float4(0.0, 0.0, 0.0, 0.0);
@@ -141,12 +91,10 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 
 	// positive offset
     float posOffZ = myDepth.Load(posOffLoc).r + gDepthBias;
-    //float4 posOffTex = renderZ < posOffZ ? empty : gColorTex.Load(posOffLoc);
 	float4 posOffTex = gColorTex.Load(posOffLoc);
 
 	// positive offset
     float negOffZ = myDepth.Load(negOffLoc).r + gDepthBias;
-    //float4 negOffTex = renderZ < negOffZ ? empty : gColorTex.Load(negOffLoc);
 	float4 negOffTex = gColorTex.Load(loc);
 
 	// shifting color channels
@@ -155,6 +103,7 @@ float4 offsetDoFFrag(vertexOutputSampler i) : SV_Target {
 	// z-Merge offset textures
     float4 outTex = float4(0.0, 0.0, 0.0, 0.0);
     
+    // coloring/tinting of offset textures
     outTex = renderZ < posOffZ ? renderTex : float4(luminance(posOffTex.rgb) * gColorSepB.rgb, 1.0);
     outTex += renderZ < negOffZ ? renderTex : float4(luminance(negOffTex.rgb) * gColorSepA.rgb, 1.0);
     outTex *= .5;

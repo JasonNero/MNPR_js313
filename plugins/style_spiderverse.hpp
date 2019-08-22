@@ -43,11 +43,11 @@ namespace sv {
 		// Circle of Diffusion
 		opName = "[quad] CoC";
 		auto opShader = new MOperationShader("sv", "quadSpiderDepth", "spiderCoc");
-		opShader->addTargetParameter("gColorTex", mRenderTargets.target(mRenderTargets.indexOf("stylizationTarget")));
+		opShader->addTargetParameter("gColorTex", mRenderTargets.target(mRenderTargets.indexOf("stylizationTarget")));		// not used
 		opShader->addTargetParameter("gDepthTex", mRenderTargets.target(mRenderTargets.indexOf("linearDepth")));
 		opShader->addTargetParameter("gZBuffer", mRenderTargets.target(mRenderTargets.indexOf("depthTarget")));
-		opShader->addParameter("gClipNear", mFxParams.zClipNear);
-		opShader->addParameter("gClipFar", mFxParams.zClipFar);
+		opShader->addParameter("gClipNear", mFxParams.zClipNear);	// not used
+		opShader->addParameter("gClipFar", mFxParams.zClipFar);		// not used
 		opShader->addParameter("gZFocus", mFxParams.svZFocus);
 		opShader->addParameter("gOffsetStrength", mFxParams.svOffsetStrength);
 		opShader->addParameter("gDepthBias", mFxParams.svDepthBias);
@@ -64,7 +64,6 @@ namespace sv {
 		opShader->addTargetParameter("gOffsetTex", mRenderTargets.target(mRenderTargets.indexOf("offsetTarget")));
 		opShader->addTargetParameter("gDepthTex", mRenderTargets.target(mRenderTargets.indexOf("linearDepth")));
 		opShader->addTargetParameter("gZBuffer", mRenderTargets.target(mRenderTargets.indexOf("depthTarget")));
-		opShader->addTargetParameter("gControlTex", mRenderTargets.target(mRenderTargets.indexOf("abstractCtrlTarget")));  // testFx control in red channel
 		opShader->addParameter("gOffsetStrength", mFxParams.svOffsetStrength);
 		opShader->addParameter("gColorSepA", mFxParams.svColorSepA);
 		opShader->addParameter("gColorSepB", mFxParams.svColorSepB);

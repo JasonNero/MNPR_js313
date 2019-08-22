@@ -61,9 +61,7 @@ float4 spiderCocFrag(vertexOutputSampler i) : SV_Target{
 	// clamping the location values to screensize
     result = float3(clamp(result.xy, 0, gScreenSize.x - 1), result.z);
 
-    float3 resultColorPreview = float3(result.rg, result.b);
-
-    return float4(resultColorPreview.rgb, 1.0);
+    return float4(result, 1.0);
 }
 
 

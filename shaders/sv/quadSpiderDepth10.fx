@@ -145,7 +145,8 @@ float4 spiderDepthFrag(vertexOutputSampler i) : SV_Target {
 
 	// merge colors
     float4 empty = float4(0.0, 0.0, 0.0, 0.0);
-    float4 resultTex = abs(renderZ) < abs(mergedOffsetZ) ? renderTex : lerp(addedOffsetTex, coloredOffsetTex, gColorSepMix);
+    //float4 resultTex = abs(renderZ) < abs(mergedOffsetZ) ? renderTex : lerp(addedOffsetTex, coloredOffsetTex, gColorSepMix);
+    float4 resultTex = lerp(addedOffsetTex, coloredOffsetTex, gColorSepMix);
 
     // interpolate effect strength
     // outTex = lerp(renderTex, outTex, gDepthEffectMix);

@@ -77,5 +77,15 @@ namespace sv {
 		mRenderOperations.append(quadOp);
 		mRenderTargets.setOperationOutputs(opName, { "stylizationTarget" });
 		
+		opName = "[quad] visualize depth";
+		opShader = new MOperationShader("sv", "quadSpiderDepth", "testTechnique");
+		opShader->addTargetParameter("gColorTex", mRenderTargets.target(mRenderTargets.indexOf("stylizationTarget")));
+		quadOp = new QuadRender(opName,
+			MHWRender::MClearOperation::kClearNone,
+			mRenderTargets,
+			*opShader);
+		mRenderOperations.append(quadOp);
+		mRenderTargets.setOperationOutputs(opName, { "stylizationTarget" });
+
 	}
 };

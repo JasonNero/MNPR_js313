@@ -18,7 +18,6 @@
 
 // TEXTURES
 Texture2D gDepthTex;
-Texture2D gZBuffer;
 Texture2D gOffsetTex;
 
 // VARIABLES

@@ -17,11 +17,8 @@
 #include "mnpr_nodes.h"
 
 // stylization attributes
-static MObject aZClipNear;
-static MObject aZClipFar;
 static MObject aSvZFocus;
 static MObject aSvOffsetStrength;
-static MObject aSvDepthBias;
 static MObject aSvColorSepMix;
 static MObject aSvDepthEffectMix;
 
@@ -45,20 +42,6 @@ namespace sv {
 		MFnTypedAttribute tAttr;
 		MFnNumericAttribute nAttr;
 
-		// zClip Near
-		//aZClipNear = nAttr.create("zClipNear", "zClipNear", MFnNumericData::kFloat, mFxParams->zClipNear[0], &status);
-		//MAKE_INPUT(nAttr);
-		//nAttr.setMin(0.0);
-		//nAttr.setSoftMax(100.0);
-		//ConfigNode::enableAttribute(aZClipNear);
-
-		// zClip Far
-		//aZClipFar = nAttr.create("zClipFar", "zClipFar", MFnNumericData::kFloat, mFxParams->zClipFar[0], &status);
-		//MAKE_INPUT(nAttr);
-		//nAttr.setMin(0.0);
-		//nAttr.setSoftMax(100.0);
-		//ConfigNode::enableAttribute(aZClipFar);
-
 		// svZFocus
 		aSvZFocus = nAttr.create("svZFocus", "svZFocus", MFnNumericData::kFloat, mFxParams->svZFocus[0], &status);
 		MAKE_INPUT(nAttr);
@@ -72,13 +55,6 @@ namespace sv {
 		nAttr.setMin(0.0);
 		nAttr.setSoftMax(30.0);
 		ConfigNode::enableAttribute(aSvOffsetStrength);
-
-		// svDepthBias
-		aSvDepthBias = nAttr.create("svDepthBias", "svDepthBias", MFnNumericData::kFloat, mFxParams->svDepthBias[0], &status);
-		MAKE_INPUT(nAttr);
-		nAttr.setMin(-1.0);
-		nAttr.setSoftMax(1.0);
-		ConfigNode::enableAttribute(aSvDepthBias);
 		
 		// svColorSepA
 		aSvColorSepAR = nAttr.create("svColorSepAR", "svColorSepAR", MFnNumericData::kFloat, mFxParams->svColorSepA[0]);
@@ -118,13 +94,8 @@ namespace sv {
 	void computeParameters(MNPROverride* mmnpr_renderer, MDataBlock data, FXParameters *mFxParams, EngineSettings *mEngSettings) {
 		MStatus status;
 
-		// READ PARAMETERS
-		//mFxParams->zClipNear[0] = data.inputValue(aZClipNear, &status).asFloat();
-		//mFxParams->zClipFar[0] = data.inputValue(aZClipFar, &status).asFloat();
-
 		mFxParams->svZFocus[0] = data.inputValue(aSvZFocus, &status).asFloat();
 		mFxParams->svOffsetStrength[0] = data.inputValue(aSvOffsetStrength, &status).asFloat();
-		mFxParams->svDepthBias[0] = data.inputValue(aSvDepthBias, &status).asFloat() / 1000;		// maya only shows 3 fractional digits
 
 		MFloatVector fvColorA = data.inputValue(aSvColorSepA, &status).asFloatVector();
 		mFxParams->svColorSepA[0] = fvColorA[0];

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // quadSpiderDepth.fx (HLSL)
-// Brief: Depth of Field via CMYK Offset
+// Brief: Depth of Field via Color Offset
 // Contributors: Jason Schuehlein
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //    ____             _   _               __    _____ _      _     _ 
@@ -24,44 +24,48 @@ Texture2D gOffsetTex;
 // VARIABLES
 float gZFocus = 0.0;
 float gOffsetStrength = 10.0;
-float gDepthBias = 1.0;
 float gDepthEffectMix = 0.5;
 float gColorSepMix = 0.5;
 
 float4 gColorSepA = float4(1.0, 1.0, 0.0, 1.0);
 float4 gColorSepB = float4(0.0, 1.0, 1.0, 1.0);
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 //        _               _
 //    ___| |__   __ _  __| | ___ _ __ ___
 //   / __| '_ \ / _` |/ _` |/ _ \ '__/ __|
 //   \__ \ | | | (_| | (_| |  __/ |  \__ \
 //   |___/_| |_|\__,_|\__,_|\___|_|  |___/
 //
-// Fragment/pixel shaders are functions that runs at each pixels. These can write
-// on up to 8 render targets at the same time. Check the quadAdjustLoad10.fx
-// shader for an example of multiple render target (MRT) shaders
+
+/*
+calculate the strength based on depth and focuspoint
+then calculate the resulting offset locations
+and return them together with the strength
+this will write the output into the gOffsetTex Buffer for later use
+*/
 
 float4 spiderCocFrag(vertexOutputSampler i) : SV_Target{
 	// current pixel location
 	int3 loc = int3(i.pos.xy, 0);
+
+	// restrained to x-Axis for now
 	float2 axis = float2(1.0, 0.0);
 
-	Texture2D myDepth = gDepthTex;
-
 	// Sampling Z
-	float renderZ = myDepth.Load(loc).r;
-	//renderZ = renderZ < 1.0 ? renderZ : 0.0; // Remove infinity depth
+	float renderZ = gDepthTex.Load(loc).r;
 
-	// calculating offset depending on depth, focus and userinput gOffsetStrength. Also truncate those to fit as integer
+	// calculating offset depending on depth, focus and userinput gOffsetStrength.
     float strength = abs(gOffsetStrength * renderZ - gZFocus);
 
-	// calculating resulting positions
-	float3 result = int3(loc.x + strength, loc.x - strength, strength);
+	// calculating resulting positions 
+	float4 result = float4(loc.x + strength, loc.x - strength, strength, 1.0);
 
 	// clamping the location values to screensize
-    result = float3(clamp(result.xy, 0, gScreenSize.x - 1), result.z);
+    result = float4(clamp(result.xy, 0, gScreenSize.x - 1), result.zw);
 
-    return float4(result, 1.0);
+	// Output Layout: (Pos Offset Loc, Neg Offset Loc, Offset Strength, unused alpha 1.0)
+    return result;
 }
 
 
@@ -74,96 +78,79 @@ choose the one with the shortest distance/lowest strength
 */
 
 float4 spiderDepthFrag(vertexOutputSampler i) : SV_Target {
+	// fetch current position
 	int3 loc = int3(i.pos.xy, 0);
 
-	Texture2D myDepth = gDepthTex;
-
-	// using only x/u axis for now
-	bool resultDiscard = false;
-
+	// initializing variables
     int3 resultLocA = int3(0, 0, 0);
     int3 resultLocB = int3(0, 0, 0);
     int resultLenA = gOffsetStrength * 2;
     int resultLenB = gOffsetStrength * 2;
 
-    // iterating through the row
+    // iterating through the row with a lookup distance of gOffsetStrength
+	// only along x-Axis for now
     for (int u = -int(gOffsetStrength); u <= int(gOffsetStrength); u++)
     {
-		// get the work coordinate
+		// get the current work coordinate
         int3 workLoc = loc + int3(u, 0, 0);
 
-		// reading the resulting locations
-		int3 resultingLocPos = int3(gOffsetTex.Load(workLoc).x, workLoc.y, 0);
-		int3 resultingLocNeg = int3(gOffsetTex.Load(workLoc).y, workLoc.y, 0);
+		// reading the resulting locations from gOffsetTex Buffer
+		int3 workLocPos = int3(gOffsetTex.Load(workLoc).x, workLoc.y, 0);
+		int3 workLocNeg = int3(gOffsetTex.Load(workLoc).y, workLoc.y, 0);
 
         // if the positions match
-        if (resultingLocPos.x - loc.x == 0)
+        if (workLocPos.x == loc.x)
         {
             // the strength or length of the offset vector at workLoc position
-            // better naming may be appropriate
-            int resultingLocLenA = gOffsetTex.Load(workLoc).z;
+            int workLocPosLen = gOffsetTex.Load(workLoc).z;
 
             // if the strength or vector length is smaller than what is currently 
             // in the result variable overwrite it and process next pixel
-            if (resultingLocLenA < resultLenA)
+            if (workLocPosLen < resultLenA)
             {
                 resultLocA = workLoc;
-                resultLenA = resultingLocLenA;
+                resultLenA = workLocPosLen;
             }
-        }
-        
-        if (resultingLocNeg.x - loc.x == 0)
+        } 
+		else if (workLocNeg.x == loc.x)
         {
             // the strength or length of the offset vector at workLoc position
-            // better naming may be appropriate
-            int resultingLocLenB = gOffsetTex.Load(workLoc).z;
+            int workLocNegLen = gOffsetTex.Load(workLoc).z;
 
             // if the strength or vector length is smaller than what is currently 
             // in the result variable overwrite it and process next pixel
-            if (resultingLocLenB < resultLenB)
+            if (workLocNegLen < resultLenB)
             {
                 resultLocB = workLoc;
-                resultLenB = resultingLocLenB;
+                resultLenB = workLocNegLen;
             }
         }
     }
 
-    // fetch colors
+    // fetch colors at different positions
     float4 renderTex = gColorTex.Load(loc);
     float4 offsetTexA = gColorTex.Load(resultLocA);
     float4 offsetTexB = gColorTex.Load(resultLocB);
 
-    // fetch Z
-    float renderZ = myDepth.Load(loc);
-    float offsetZA = myDepth.Load(resultLocA) + gDepthBias;
-    float offsetZB = myDepth.Load(resultLocB) + gDepthBias;
-
-    // merge offsets
-    float4 addedOffsetTex = (offsetTexA + offsetTexB) / 2;
+    // merge offsets (averageOffsetTex is the untinted variant)
+    float4 averageOffsetTex = (offsetTexA + offsetTexB) / 2;
     float4 coloredOffsetTex = (offsetTexA * gColorSepA) + (offsetTexB * gColorSepB);
-    float4 mergedOffsetZ = min(offsetZA, offsetZB);
 
 	// merge colors
-    float4 empty = float4(0.0, 0.0, 0.0, 0.0);
-    //float4 resultTex = abs(renderZ) < abs(mergedOffsetZ) ? renderTex : lerp(addedOffsetTex, coloredOffsetTex, gColorSepMix);
-    float4 resultTex = lerp(addedOffsetTex, coloredOffsetTex, gColorSepMix);
+    float4 resultTex = lerp(averageOffsetTex, coloredOffsetTex, gColorSepMix);
 
-    // interpolate effect strength
-    // outTex = lerp(renderTex, outTex, gDepthEffectMix);
-
+	// fade effect in or out and return
     return lerp(renderTex, resultTex, gDepthEffectMix);
 }
 
-/////////////////////////////////////////////////////////////////////////////
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
 //    _            _           _
 //   | |_ ___  ___| |__  _ __ (_) __ _ _   _  ___  ___
 //   | __/ _ \/ __| '_ \| '_ \| |/ _` | | | |/ _ \/ __|
 //   | ||  __/ (__| | | | | | | | (_| | |_| |  __/\__ \
 //    \__\___|\___|_| |_|_| |_|_|\__, |\__,_|\___||___/
 //                                  |_|
-// A technique defines the combination of Vertex, Geometry and Fragment/Pixel
-// shader that runs to draw whatever is assigned with the shader.
+
 technique11 spiderCoc {
 	pass p0 {
 		SetVertexShader(CompileShader(vs_5_0, quadVertSampler()));

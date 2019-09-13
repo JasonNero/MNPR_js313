@@ -7,10 +7,10 @@
 //   |___/ .__/|_|\__,_|\___|_|    \_/ \___|_|  |___/\___|   |_| |_|\___/ \__,_|\___|
 //       |_|   
 //
-//	 \brief Sandbox config node
-//	 Contains the attributes and node computation for the sandbox stylization
+//	 \brief Spiderverse config node
+//	 Contains the attributes and node computation for the spiderverse stylization
 //
-//   Developed by: You!
+//   Developed by: Jason Schuehlein
 //
 ///////////////////////////////////////////////////////////////////////////////////
 #include "mnpr_renderer.h"

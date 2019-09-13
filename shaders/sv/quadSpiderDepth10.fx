@@ -14,7 +14,6 @@
 // This shader tries to imitate the depth of field effect of 'Spider-Man into the Spider-Verse'
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "..\\include\\quadCommon.fxh"
-#include "..\\include\\quadColorTransform.fxh"
 
 // TEXTURES
 Texture2D gDepthTex;
@@ -51,11 +50,11 @@ float4 spiderCocFrag(vertexOutputSampler i) : SV_Target{
 	// restrained to x-Axis for now
 	float2 axis = float2(1.0, 0.0);
 
-	// Sampling Z
+	// Reading Z
 	float renderZ = gDepthTex.Load(loc).r;
 
 	// calculating offset depending on depth, focus and userinput gOffsetStrength.
-    float strength = abs(gOffsetStrength * (renderZ - gZFocus));
+    float strength = abs(gOffsetStrength * pow(renderZ - gZFocus, 2));
 
 	// calculating resulting positions 
 	float4 result = float4(loc.x + strength, loc.x - strength, strength, 1.0);
@@ -77,69 +76,57 @@ choose the one with the shortest distance/lowest strength
 */
 
 float4 spiderDepthFrag(vertexOutputSampler i) : SV_Target {
-	// fetch current position
+	// fetch current position and initialize variables
 	int3 loc = int3(i.pos.xy, 0);
 
-	// initializing variables
-    int3 resultLocA = int3(0, 0, 0);
-    int3 resultLocB = int3(0, 0, 0);
-    int resultLenA = gOffsetStrength * 2;
-    int resultLenB = gOffsetStrength * 2;
+	int3 resultLocA = int3(0, 0, 0);
+	int3 resultLocB = int3(0, 0, 0);
+	int resultLenA = gOffsetStrength * 2;
+	int resultLenB = gOffsetStrength * 2;
 
-    // iterating through the row with a lookup distance of gOffsetStrength
-	// only along x-Axis for now
-    for (int u = -int(gOffsetStrength); u <= int(gOffsetStrength); u++)
-    {
+	// iterating through the current x-Axis row with a lookup distance of gOffsetStrength
+	for (int u = -int(gOffsetStrength); u <= int(gOffsetStrength); u++) {
 		// get the current work coordinate
-        int3 workLoc = loc + int3(u, 0, 0);
+		int3 workLoc = loc + int3(u, 0, 0);
 
 		// reading the resulting locations from gOffsetTex Buffer
 		int3 workLocPos = int3(gOffsetTex.Load(workLoc).x, workLoc.y, 0);
 		int3 workLocNeg = int3(gOffsetTex.Load(workLoc).y, workLoc.y, 0);
 
-        // if the positions match
-        if (workLocPos.x == loc.x)
-        {
-            // the strength or length of the offset vector at workLoc position
-            int workLocPosLen = gOffsetTex.Load(workLoc).z;
+		// if the positions match
+		if (workLocPos.x == loc.x) {
+			// the strength or length of the offset vector at workLoc position
+			int workLocPosLen = gOffsetTex.Load(workLoc).z;
 
-            // if the strength or vector length is smaller than what is currently 
-            // in the result variable overwrite it and process next pixel
-            if (workLocPosLen < resultLenA)
-            {
-                resultLocA = workLoc;
-                resultLenA = workLocPosLen;
-            }
-        } 
-		else if (workLocNeg.x == loc.x)
-        {
-            // the strength or length of the offset vector at workLoc position
-            int workLocNegLen = gOffsetTex.Load(workLoc).z;
+			// if the strength or vector length is smaller than what is currently 
+			// in the result variable overwrite it and process next pixel
+			if (workLocPosLen < resultLenA) {
+				resultLocA = workLoc;
+				resultLenA = workLocPosLen;
+			}
+		}
+		// same as above but for the x-negative offset
+		else if (workLocNeg.x == loc.x) {
+			int workLocNegLen = gOffsetTex.Load(workLoc).z;
+			if (workLocNegLen < resultLenB) {
+				resultLocB = workLoc;
+				resultLenB = workLocNegLen;
+			}
+		}
+	}
 
-            // if the strength or vector length is smaller than what is currently 
-            // in the result variable overwrite it and process next pixel
-            if (workLocNegLen < resultLenB)
-            {
-                resultLocB = workLoc;
-                resultLenB = workLocNegLen;
-            }
-        }
-    }
+	// fetch colors at different positions
+	float4 renderTex = gColorTex.Load(loc);
+	float4 offsetTexA = gColorTex.Load(resultLocA);
+	float4 offsetTexB = gColorTex.Load(resultLocB);
 
-    // fetch colors at different positions
-    float4 renderTex = gColorTex.Load(loc);
-    float4 offsetTexA = gColorTex.Load(resultLocA);
-    float4 offsetTexB = gColorTex.Load(resultLocB);
+	// merge offsets (averageOffsetTex is the untinted variant)
+	float4 averageOffsetTex = (offsetTexA + offsetTexB) / 2;
+	float4 coloredOffsetTex = (offsetTexA * gColorSepA) + (offsetTexB * gColorSepB);
 
-    // merge offsets (averageOffsetTex is the untinted variant)
-    float4 averageOffsetTex = (offsetTexA + offsetTexB) / 2;
-    float4 coloredOffsetTex = (offsetTexA * gColorSepA) + (offsetTexB * gColorSepB);
-
-	// merge colors
-    float4 resultTex = lerp(averageOffsetTex, coloredOffsetTex, gColorSepMix);
-
-	// fade effect in or out and return
-    return lerp(renderTex, resultTex, gDepthEffectMix);
+	// merge/interpolate effect and return
+	float4 resultTex = lerp(averageOffsetTex, coloredOffsetTex, gColorSepMix);
+	return lerp(renderTex, resultTex, gDepthEffectMix);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

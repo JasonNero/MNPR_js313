@@ -7,11 +7,11 @@
 //   |___/ .__/|_|\__,_|\___|_|    \_/ \___|_|  |___/\___|
 //       |_|   
 //
-//	 \brief Sandbox stylization pipeline
-//	 Contains the sandbox stylization pipeline with all necessary targets and operations
-//	 Use this style to develop whatever stylization you'd like
+//	 \brief Spiderverse Stylization Pipeline
+//	 Based upon the sandbox stylization pipeline with all necessary 
+//	 targets and operations for the spiderverse offset 
 //
-//   Developed by: You!
+//   Developed by: Jason Schuehlein
 //
 ///////////////////////////////////////////////////////////////////////////////////
 #include "mnpr_renderer.h"
@@ -43,14 +43,11 @@ namespace sv {
 		// Circle of Diffusion
 		opName = "[quad] CoC";
 		auto opShader = new MOperationShader("sv", "quadSpiderDepth", "spiderCoc");
-		opShader->addTargetParameter("gColorTex", mRenderTargets.target(mRenderTargets.indexOf("stylizationTarget")));		// not used
+		opShader->addTargetParameter("gColorTex", mRenderTargets.target(mRenderTargets.indexOf("stylizationTarget")));
 		opShader->addTargetParameter("gDepthTex", mRenderTargets.target(mRenderTargets.indexOf("linearDepth")));
 		opShader->addTargetParameter("gZBuffer", mRenderTargets.target(mRenderTargets.indexOf("depthTarget")));
-		opShader->addParameter("gClipNear", mFxParams.zClipNear);	// not used
-		opShader->addParameter("gClipFar", mFxParams.zClipFar);		// not used
 		opShader->addParameter("gZFocus", mFxParams.svZFocus);
 		opShader->addParameter("gOffsetStrength", mFxParams.svOffsetStrength);
-		opShader->addParameter("gDepthBias", mFxParams.svDepthBias);
 		auto quadOp = new QuadRender(opName,
 			MHWRender::MClearOperation::kClearNone,
 			mRenderTargets,

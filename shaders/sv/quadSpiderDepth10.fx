@@ -55,7 +55,7 @@ float4 spiderCocFrag(vertexOutputSampler i) : SV_Target{
 	float renderZ = gDepthTex.Load(loc).r;
 
 	// calculating offset depending on depth, focus and userinput gOffsetStrength.
-    float strength = abs(gOffsetStrength * renderZ - gZFocus);
+    float strength = abs(gOffsetStrength * (renderZ - gZFocus));
 
 	// calculating resulting positions 
 	float4 result = float4(loc.x + strength, loc.x - strength, strength, 1.0);

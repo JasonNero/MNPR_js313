@@ -46,7 +46,7 @@ namespace sv {
 		aSvZFocus = nAttr.create("svZFocus", "svZFocus", MFnNumericData::kFloat, mFxParams->svZFocus[0], &status);
 		MAKE_INPUT(nAttr);
 		nAttr.setMin(0.0);
-		nAttr.setSoftMax(100.0);
+		nAttr.setMax(1.0);
 		ConfigNode::enableAttribute(aSvZFocus);
 
 		// svOffsetStrength

@@ -47,9 +47,6 @@ float4 spiderCocFrag(vertexOutputSampler i) : SV_Target{
 	// current pixel location
 	int3 loc = int3(i.pos.xy, 0);
 
-	// restrained to x-Axis for now
-	float2 axis = float2(1.0, 0.0);
-
 	// Reading Z
 	float renderZ = gDepthTex.Load(loc).r;
 

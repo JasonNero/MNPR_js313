@@ -73,16 +73,16 @@ namespace sv {
 		mRenderOperations.append(quadOp);
 		mRenderTargets.setOperationOutputs(opName, { "stylizationTarget" });
 		
-		opName = "[quad] spiderverse test";
-		opShader = new MOperationShader("sv", "quadTest", "testTechnique");
-		opShader->addSamplerState("gSampler", MHWRender::MSamplerState::kTexClamp, MHWRender::MSamplerState::kMinMagMipPoint);
-		opShader->addTargetParameter("gColorTex", mRenderTargets.target(mRenderTargets.indexOf("stylizationTarget")));
-		quadOp = new QuadRender(opName,
-			MHWRender::MClearOperation::kClearNone,
-			mRenderTargets,
-			*opShader);
-		mRenderOperations.append(quadOp);
-		mRenderTargets.setOperationOutputs(opName, { "stylizationTarget" });
+		//opName = "[quad] spiderverse test";
+		//opShader = new MOperationShader("sv", "quadTest", "testTechnique");
+		//opShader->addSamplerState("gSampler", MHWRender::MSamplerState::kTexClamp, MHWRender::MSamplerState::kMinMagMipPoint);
+		//opShader->addTargetParameter("gColorTex", mRenderTargets.target(mRenderTargets.indexOf("stylizationTarget")));
+		//quadOp = new QuadRender(opName,
+		//	MHWRender::MClearOperation::kClearNone,
+		//	mRenderTargets,
+		//	*opShader);
+		//mRenderOperations.append(quadOp);
+		//mRenderTargets.setOperationOutputs(opName, { "stylizationTarget" });
 
 	}
 };
